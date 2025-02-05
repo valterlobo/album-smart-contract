@@ -64,3 +64,12 @@ $ forge --help
 $ anvil --help
 $ cast --help
 ```
+
+
+forge script script/CollectibleAlbumDeploy.s.sol:CollectibleAlbumDeployScript --rpc-url $TESTRPC --broadcast -vvv
+
+
+
+forge script script/CollectibleAlbumMintCard.s.sol:CollectibleAlbumMintCardScript --rpc-url $TESTRPC --broadcast -vvv
+
+CollectibleAlbumMintCard.s
