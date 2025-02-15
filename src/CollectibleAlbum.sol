@@ -11,8 +11,6 @@ import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "./DataType.sol";
 import "./ICollectiblesType.sol";
 
-//////ERC1155, ERC1155Burnable, Ownable   ERC1155
-
 contract CollectibleAlbum is ICollectiblesType, Ownable, ERC1155 {
     string public name;
     string public symbol;

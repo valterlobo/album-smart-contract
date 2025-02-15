@@ -71,5 +71,3 @@ forge script script/CollectibleAlbumDeploy.s.sol:CollectibleAlbumDeployScript --
 
 
 forge script script/CollectibleAlbumMintCard.s.sol:CollectibleAlbumMintCardScript --rpc-url $TESTRPC --broadcast -vvv
-
-CollectibleAlbumMintCard.s

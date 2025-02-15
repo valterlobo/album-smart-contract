@@ -12,8 +12,9 @@ contract CollectibleAlbumDeployScript is Script {
         vm.startBroadcast(deployerPrivateKey);
         address initialOwner = vm.envAddress("OWNER");
 
-        CollectibleAlbum collectibleAlbum =
-            new CollectibleAlbum("CARD STAR WARS", "NFTSWAR", "https://pt.wikipedia.org/wiki/Star_Wars", initialOwner, 10);
+        CollectibleAlbum collectibleAlbum = new CollectibleAlbum(
+            "CARD STAR WARS", "NFTSWAR", "https://pt.wikipedia.org/wiki/Star_Wars", initialOwner, 10
+        );
         console.log(address(collectibleAlbum));
         vm.stopBroadcast();
     }
