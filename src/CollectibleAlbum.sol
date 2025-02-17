@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.28;
+pragma solidity 0.8.25;
 
 /*
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
@@ -16,7 +16,8 @@ contract CollectibleAlbum is ICollectiblesType, Ownable, ERC1155 {
     string public symbol;
     string public uriCollectibleAlbum;
     address public operator;
-    uint256 public quantity;
+    uint256 public immutable quantity;
+    uint256 public randNonce = 0;
 
     mapping(uint256 => CardType) public cardTypes;
     //Array para armazenar os IDs dos CardTypes adicionados (para iteração)
@@ -29,6 +30,8 @@ contract CollectibleAlbum is ICollectiblesType, Ownable, ERC1155 {
         address addrOwnerlCollectibles,
         uint256 qtd
     ) Ownable(addrOwnerlCollectibles) ERC1155("") {
+        require(addrOwnerlCollectibles != address(0), "operator can't the zero address");
+        require(qtd > 0, "Album quantity can't the zero");
         name = nameCollectibles;
         symbol = symbolCollectibles;
         uriCollectibleAlbum = uriCollectibles;
@@ -86,8 +89,12 @@ contract CollectibleAlbum is ICollectiblesType, Ownable, ERC1155 {
         emit URICardType(id, newUri);
     }
 
-    function uri(uint256 id) public view virtual override(ERC1155, ICollectiblesType) returns (string memory) {
+    function getCardURI(uint256 id) public view virtual returns (string memory) {
         return cardTypes[id].uri;
+    }
+
+    function uri(uint256 id) public view virtual override(ERC1155) returns (string memory) {
+        return getCardURI(id);
     }
 
     function setCardTypeSupply(uint256 id, uint256 newSupply) external onlyOwner activeCardType(id) {
@@ -110,19 +117,32 @@ contract CollectibleAlbum is ICollectiblesType, Ownable, ERC1155 {
         return operator;
     }
 
-    function transferOperator(address newOperator) external override {
+    function transferOperator(address newOperator) external override onlyOwner {
+        require(newOperator != address(0), "operator can't the zero address");
+        emit TransferOperator(operator, newOperator);
         operator = newOperator;
     }
+
+/*
+    function randMod() internal returns (uint256) {
+        // increase nonce
+        randNonce++;
+        return uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender, randNonce)));
+    }*/
 
     /**
      * @dev Retorna aleatoriamente `count` CardTypes que ainda possuam supply disponível,
      * escolhendo-os com probabilidade ponderada pela raridade.
      * Requer que haja pelo menos `count` tipos disponíveis.
      */
-    function getRandomAvailableCardTypes(uint256 count) external view returns (CardType[] memory) {
+    function getRandomAvailableCardTypes(uint256 count) external returns (CardType[] memory) {
         uint256 availableCount = 0;
+        uint256 cardLength = cardTypeIds.length;
+        // increase nonce
+        randNonce++;
+
         // Conta quantos CardTypes possuem supply disponível
-        for (uint256 i = 0; i < cardTypeIds.length; i++) {
+        for (uint256 i = 0; i < cardLength; i++) {
             uint256 id = cardTypeIds[i];
             if (cardTypes[id].supply < cardTypes[id].maxSupply) {
                 availableCount++;
@@ -135,7 +155,7 @@ contract CollectibleAlbum is ICollectiblesType, Ownable, ERC1155 {
         // Cria array temporário com os IDs disponíveis
         uint256[] memory availIds = new uint256[](availableCount);
         uint256 index = 0;
-        for (uint256 i = 0; i < cardTypeIds.length; i++) {
+        for (uint256 i = 0; i < cardLength; i++) {
             uint256 id = cardTypeIds[i];
             if (cardTypes[id].supply < cardTypes[id].maxSupply) {
                 availIds[index] = id;
@@ -154,7 +174,7 @@ contract CollectibleAlbum is ICollectiblesType, Ownable, ERC1155 {
             }
             // Gera um número pseudoaleatório entre 0 e totalWeight-1
             uint256 randomNumber =
-                uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, j))) % totalWeight;
+                uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, j))) % (totalWeight + randNonce);
 
             uint256 runningWeight = 0;
             uint256 selectedIndex = 0;

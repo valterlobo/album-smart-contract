@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.28;
+pragma solidity 0.8.25;
 
 import "./DataType.sol";
 
@@ -9,6 +9,8 @@ interface ICollectiblesType {
     event URICardType(uint256 indexed idType, string uri);
 
     event SupplyCardType(uint256 indexed idType, uint256 newSupply);
+
+    event TransferOperator(address indexed oldOperator, address indexed newOperator);
 
     function transferOwner(address newOwner) external;
 
@@ -32,11 +34,11 @@ interface ICollectiblesType {
 
     function setCardURI(uint256 id, string memory newUri) external;
 
-    function uri(uint256 id) external view returns (string memory);
+    function getCardURI(uint256 id) external view returns (string memory);
 
     function setCardTypeSupply(uint256 id, uint256 newSupply) external;
 
     function mintCardType(uint256 id, address to, uint256 amount) external;
 
-    function getRandomAvailableCardTypes(uint256 count) external view returns (CardType[] memory);
+    function getRandomAvailableCardTypes(uint256 count) external returns (CardType[] memory);
 }
