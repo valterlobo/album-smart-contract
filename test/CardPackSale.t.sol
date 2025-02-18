@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.28;
+pragma solidity 0.8.25;
 
 import "forge-std/Test.sol";
 import "../src/CardPackSale.sol"; // Certifique-se de ajustar o caminho se necessário
@@ -55,7 +55,7 @@ contract MockERC20 is IERC20 {
 contract CardPackSaleTest is Test {
     MockERC20 usdc;
     ICollectiblesType album;
-    CardPackSale sale;
+    CardPackSale cardPackSale;
 
     // Endereços para o tesouro e para o comprador
     address treasury = address(0x999);
@@ -75,9 +75,9 @@ contract CardPackSaleTest is Test {
         vm.prank(owner);
         album = new CollectibleAlbum("NFT Album", "NFTALB", "ipfs://album-uri", owner, 100);
         // Deploy do contrato CardPackSale
-        sale = new CardPackSale(address(usdc), address(album), cardPackPrice, packSize, treasury);
+        cardPackSale = new CardPackSale(address(usdc), address(album), cardPackPrice, packSize, treasury, owner);
         // Mintar USDC para o comprador
-        usdc.mint(buyer, 1000 * 10 ** 18);
+        usdc.mint(buyer, 10 * cardPackPrice);
 
         vm.startPrank(owner);
         // Configurar 3 tipos de cards
@@ -89,7 +89,7 @@ contract CardPackSaleTest is Test {
         album.setCardTypeSupply(4, 98);
         album.addCardType(5, 100, RarityType.COMMON, "Card E", "ipfs://cardE");
         album.setCardTypeSupply(5, 100);
-        album.transferOperator(address(sale));
+        album.transferOperator(address(cardPackSale));
         vm.stopPrank();
 
         /* Converter o array para memória e configurar o pack fixo no album mock
@@ -101,11 +101,19 @@ contract CardPackSaleTest is Test {
         */
     }
 
+    function testInitialValues() public {
+        assertEq(address(cardPackSale.usdcToken()), address(usdc));
+        assertEq(address(cardPackSale.album()), address(album));
+        assertEq(cardPackSale.cardPackPrice(), cardPackPrice);
+        assertEq(cardPackSale.packSize(), packSize);
+        assertEq(cardPackSale.treasury(), treasury);
+    }
+
     /// @dev Testa o fluxo de compra do card pack com sucesso.
     function testBuyCardPack_Success() public {
         // O comprador aprova o contrato de venda para gastar o valor do pack
         vm.prank(buyer);
-        usdc.approve(address(sale), cardPackPrice);
+        usdc.approve(address(cardPackSale), cardPackPrice);
 
         // Salva os balanços iniciais de USDC
         for (uint256 index = 0; index < 1000000; index++) {
@@ -117,7 +125,7 @@ contract CardPackSaleTest is Test {
 
         // Compra o pack
         vm.prank(buyer);
-        CardType[] memory pack = sale.buyCardPack();
+        CardType[] memory pack = cardPackSale.buyCardPack();
 
         // Verifica se o pack retornado possui o tamanho correto
         assertEq(pack.length, packSize, "Returned pack size mismatch");
@@ -158,6 +166,54 @@ contract CardPackSaleTest is Test {
     function testBuyCardPack_FailsWithoutApproval() public {
         vm.prank(buyer);
         vm.expectRevert("Insufficient allowance");
-        sale.buyCardPack();
+        cardPackSale.buyCardPack();
+    }
+
+    function testSetCardPackPrice() public {
+        uint256 newPrice = 100 * 10 ** 18;
+        vm.prank(owner);
+        cardPackSale.setCardPackPrice(newPrice);
+        assertEq(cardPackSale.cardPackPrice(), newPrice);
+    }
+
+    function testSetPackSize() public {
+        uint256 newSize = 5;
+        vm.prank(owner);
+        cardPackSale.setPackSize(newSize);
+        assertEq(cardPackSale.packSize(), newSize);
+    }
+
+    function testSetTreasury() public {
+        address newTreasury = address(0x4);
+        vm.prank(owner);
+        cardPackSale.setTreasury(newTreasury);
+        assertEq(cardPackSale.treasury(), newTreasury);
+    }
+
+    function testBuyCardPackSuccess() public {
+        vm.startPrank(buyer);
+        usdc.approve(address(cardPackSale), cardPackPrice);
+        cardPackSale.buyCardPack();
+        vm.stopPrank();
+
+        assertEq(usdc.balanceOf(treasury), cardPackPrice);
+    }
+
+    function testBuyCardPackFailsWithoutBalance() public {
+        vm.prank(buyer);
+        usdc.transfer(owner, 1000 * 10 ** 18); // Zera saldo do user
+
+        vm.prank(buyer);
+        vm.expectRevert("Insufficient balance");
+        cardPackSale.buyCardPack();
+    }
+
+    function testBuyCardPackFailsWithoutApproval() public {
+        vm.prank(buyer);
+        usdc.approve(address(cardPackSale), 0); // Remove aprovação
+
+        vm.prank(buyer);
+        vm.expectRevert("Insufficient allowance");
+        cardPackSale.buyCardPack();
     }
 }

@@ -123,7 +123,7 @@ contract CollectibleAlbum is ICollectiblesType, Ownable, ERC1155 {
         operator = newOperator;
     }
 
-/*
+    /*
     function randMod() internal returns (uint256) {
         // increase nonce
         randNonce++;
