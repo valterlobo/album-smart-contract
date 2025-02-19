@@ -11,7 +11,7 @@ import "./ICollectiblesType.sol";
 /**
  * @dev Interface para interação com o contrato CollectibleAlbum.
  * É necessário que o contrato CollectibleAlbum possua os métodos:
- * - getRandomAvailableCardTypes(uint256 count) external view returns (CardType[] memory)
+ * - getRandomAvailableCardTypes(uint256 count) external  returns (CardType[] memory)
  * - mintCardType(uint256 id, address to, uint256 amount) external
  *
  * Também se utiliza o struct CardType e o enum RarityType, conforme definido no seu projeto.
@@ -20,7 +20,7 @@ import "./ICollectiblesType.sol";
 /// @title CardPackSale
 /// @notice Contrato para venda de pacotes de cards usando USDC
 contract CardPackSale is Ownable, ReentrancyGuard {
-    IERC20 public usdcToken;
+    IERC20 public immutable usdcToken;
     ICollectiblesType public immutable album;
     uint256 public cardPackPrice;
     uint256 public packSize;
@@ -66,6 +66,10 @@ contract CardPackSale is Ownable, ReentrancyGuard {
      * @return pack O array com os CardTypes sorteados.
      */
     function buyCardPack() external nonReentrant returns (CardType[] memory pack) {
+        // ????require(tx.origin == msg.sender, "Contracts not allowed");
+
+        require(usdcToken.balanceOf(msg.sender) >= cardPackPrice, "Insufficient USDC balance");
+
         // Transfere o valor do card pack do comprador para o tesouro
         require(usdcToken.transferFrom(msg.sender, treasury, cardPackPrice), "USDC payment failed");
 
@@ -98,11 +102,11 @@ contract CardPackSale is Ownable, ReentrancyGuard {
         return treasury;
     }
 
-    // Setter methods (with access control)
+    /* Setter methods (with access control)
     function setUsdcToken(IERC20 ctrUsdcToken) external onlyOwner {
         require(ctrUsdcToken != IERC20(address(0)), "Invalid address");
         usdcToken = ctrUsdcToken;
-    }
+    }*/
 
     function setCardPackPrice(uint256 intCardPackPrice) external onlyOwner {
         require(intCardPackPrice > 0, "Price must be greater than 0");

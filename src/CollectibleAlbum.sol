@@ -173,8 +173,7 @@ contract CollectibleAlbum is ICollectiblesType, Ownable, ERC1155 {
                 totalWeight += getWeight(cardTypes[cardId].rarityType);
             }
             // Gera um número pseudoaleatório entre 0 e totalWeight-1
-            uint256 randomNumber =
-                uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, j))) % (totalWeight + randNonce);
+            uint256 randomNumber = getRandomNumber(randNonce) % (totalWeight + randNonce);
 
             uint256 runningWeight = 0;
             uint256 selectedIndex = 0;
@@ -197,6 +196,10 @@ contract CollectibleAlbum is ICollectiblesType, Ownable, ERC1155 {
         }
 
         return selected;
+    }
+
+    function getRandomNumber(uint256 seed) public view returns (uint256) {
+        return uint256(keccak256(abi.encodePacked(block.prevrandao, msg.sender, seed)));
     }
 
     /**
