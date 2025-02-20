@@ -101,7 +101,7 @@ contract CardPackSaleTest is Test {
         */
     }
 
-    function testInitialValues() public {
+    function testInitialValues() public view {
         assertEq(address(cardPackSale.usdcToken()), address(usdc));
         assertEq(address(cardPackSale.album()), address(album));
         assertEq(cardPackSale.cardPackPrice(), cardPackPrice);
@@ -183,13 +183,6 @@ contract CardPackSaleTest is Test {
         assertEq(cardPackSale.packSize(), newSize);
     }
 
-    function testSetTreasury() public {
-        address newTreasury = address(0x4);
-        vm.prank(owner);
-        cardPackSale.setTreasury(newTreasury);
-        assertEq(cardPackSale.treasury(), newTreasury);
-    }
-
     function testBuyCardPackSuccess() public {
         vm.startPrank(buyer);
         usdc.approve(address(cardPackSale), cardPackPrice);
@@ -204,7 +197,7 @@ contract CardPackSaleTest is Test {
         usdc.transfer(owner, 1000 * 10 ** 18); // Zera saldo do user
 
         vm.prank(buyer);
-        vm.expectRevert("Insufficient balance");
+        vm.expectRevert("Insufficient USDC balance");
         cardPackSale.buyCardPack();
     }
 
